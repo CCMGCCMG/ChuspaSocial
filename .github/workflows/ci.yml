@@ -59,7 +59,7 @@ jobs:
         run: |
           composer create-project --no-interaction --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci "^4"
           echo "$GITHUB_WORKSPACE/ci/bin" >> "$GITHUB_PATH"
-echo "$GITHUB_WORKSPACE/ci/vendor/bin" >> "$GITHUB_PATH"
+          echo "$GITHUB_WORKSPACE/ci/vendor/bin" >> "$GITHUB_PATH"
 
       - name: Ejecutar phpcs
         if: ${{ !cancelled() }}
