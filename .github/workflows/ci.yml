@@ -67,7 +67,7 @@ jobs:
       - name: Ejecutar phpunit
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpunit --fail-on-warning
-        
+
       - name: Verificar nombre de la rama del PR
         env:
           HEAD_REF: ${{ github.head_ref }}
