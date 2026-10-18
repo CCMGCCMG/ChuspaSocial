@@ -53,7 +53,12 @@
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
             </KEYS>
+            <INDEXES>
+                <INDEX NAME="courseid_timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+                <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
+            </INDEXES>
         </TABLE>
     </TABLES>
 </XMLDB>
