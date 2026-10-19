@@ -26,6 +26,32 @@ Para mantener la compatibilidad con las restricciones de Moodle, los nombres de 
 
 Esta regla debe respetarse al definir los nombres de las siete tablas del modelo de datos.
 
+## Tabla `local_chuspasocial_post`
+
+Almacena las publicaciones del muro general y de los cursos en ChuspaSocial.
+
+| Campo | Tipo XMLDB | Nulo | Descripción |
+|---|---|---|---|
+| `id` | INT(10), secuencia | No | Clave primaria autoincremental de la publicación. |
+| `userid` | INT(10) | No | ID del usuario que crea la publicación (referencia a `user.id`). |
+| `courseid` | INT(10) | No | ID del curso asociado. El valor `0` representa el muro general. |
+| `type` | CHAR(20) | No | Tipo de publicación. Valores permitidos: `post`, `announcement`, `activity`. |
+| `content` | TEXT | No | Contenido de la publicación. |
+| `contentformat` | INT(2) | No | Formato del contenido según las constantes `FORMAT_*` de Moodle. |
+| `hidden` | INT(1) | No | Indica si la publicación está oculta: `0` visible, `1` oculta. |
+| `timecreated` | INT(10) | No | Marca de tiempo Unix de creación. |
+| `timemodified` | INT(10) | No | Marca de tiempo Unix de la última modificación. |
+
+### Valores permitidos de `type`
+
+XMLDB no define un tipo enum para este campo, por lo que `type` se almacena como `CHAR` y sus valores se validan en la aplicación.
+
+| Valor | Significado |
+|---|---|
+| `post` | Publicación normal de un usuario. |
+| `announcement` | Anuncio publicado en el muro. |
+| `activity` | Publicación asociada a una actividad. |
+
 ## Tabla `local_chuspasocial_follow`
 
 Almacena los elementos que sigue cada usuario: otros usuarios y etiquetas (tags). Cada fila representa un seguimiento.

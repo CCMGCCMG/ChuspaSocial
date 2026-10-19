@@ -39,4 +39,11 @@ $functions = [
         'type' => 'write',
         'ajax' => true,
     ],
+    'local_chuspasocial_add_comment' => [
+        'classname' => \local_chuspasocial\external\add_comment::class,
+        'methodname' => 'execute',
+        'description' => 'Add a comment to a post.',
+        'type' => 'write',
+        'ajax' => true,
+    ],
 ];

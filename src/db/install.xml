@@ -55,5 +55,21 @@
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
             </KEYS>
         </TABLE>
+        <TABLE NAME="local_chuspasocial_report" COMMENT="Reportes de contenido de ChuspaSocial">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="itemtype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Tipo de contenido reportado"/>
+                <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Identificador del contenido reportado"/>
+                <FIELD NAME="reporterid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Usuario que realiza el reporte"/>
+                <FIELD NAME="reason" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Motivo del reporte"/>
+                <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="open" SEQUENCE="false" COMMENT="Estado del reporte"/>
+                <FIELD NAME="resolvedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Usuario que resuelve el reporte"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Marca de tiempo de creación"/>
+                <FIELD NAME="timeresolved" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Marca de tiempo de resolución"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+        </TABLE>
     </TABLES>
 </XMLDB>
