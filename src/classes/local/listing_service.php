@@ -79,6 +79,9 @@ class listing_service {
             $listingid,
             ['subdirs' => 0, 'accepted_types' => ['image']]
         );
+    }
+
+    /**
      * Get the available listings linked to the courses of the current user.
      *
      * A listing linked to several courses of the user is returned only once.
