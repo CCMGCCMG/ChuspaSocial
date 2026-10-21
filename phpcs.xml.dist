@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="ChuspaSocial">
+    <description>Estandar de codificacion de Moodle aplicado al codigo del plugin.</description>
+
+    <!-- Carpeta que se analiza cuando se ejecuta phpcs sin argumentos. -->
+    <file>src</file>
+
+    <!-- El JavaScript compilado por Grunt no se revisa. -->
+    <exclude-pattern>src/amd/build/*</exclude-pattern>
+
+    <rule ref="moodle"/>
+</ruleset>

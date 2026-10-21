@@ -1,0 +1,7 @@
+# Normaliza los finales de linea del proyecto
+* text=auto eol=lf
+
+# Archivos de imagen tratados como binarios
+*.png binary
+*.jpg binary
+*.webp binary

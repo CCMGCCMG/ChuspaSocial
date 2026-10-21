@@ -6,6 +6,10 @@ labels: "test"
 
 ## ¿Qué se debe probar?
 
+## Módulo
+
+## Archivo a modificar
+
 ## Tipo de prueba
 - [ ] Unitaria
 - [ ] Integración

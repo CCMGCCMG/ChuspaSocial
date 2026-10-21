@@ -1,0 +1,26 @@
+
+/*
+ * Estilos locales de ChuspaSocial.
+ * Las clases CSS propias deben utilizar el prefijo local-chuspasocial.
+ */
+
+
+.local-chuspasocial {
+}
+
+/* Regla: focus-visible para los botones con clase local-chuspasocial */
+.local-chuspasocial:focus-visible,
+button.local-chuspasocial:focus-visible,
+.btn.local-chuspasocial:focus-visible {
+    outline: 3px solid #0f6cbf;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+/* Regla: anuncios oficiales con borde izquierdo del color del tema y fondo suave */
+.local-chuspasocial-announcement {
+    border-left: 4px solid var(--primary, #0f6cbf);
+    background-color: #e7f1fa;
+    color: #1d2125;
+}
+

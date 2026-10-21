@@ -1,0 +1,14 @@
+{
+    "name": "sis-inf/chuspasocial",
+    "description": "Red social academica y marketplace de libros integrados en Moodle.",
+    "type": "project",
+    "license": "MIT",
+    "require-dev": {
+        "moodlehq/moodle-cs": "^3.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

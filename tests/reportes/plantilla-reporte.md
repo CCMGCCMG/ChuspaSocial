@@ -1,13 +1,16 @@
-# Informe de Pruebas — Sprint [N]
+﻿# Informe de Pruebas — Sprint [N]
 
-**Fecha:** 
-**Versión probada:** 
-**Responsable QA:** 
+**Fecha:**  
+**Versión probada:**  
+**Responsable QA:**  
+**Versión de Moodle:**  
+**Versión del plugin:**  
+**Base de datos:**  
+**Navegador:**  
 
 ---
 
 ## Resumen ejecutivo
-
 
 ## Métricas
 
@@ -35,7 +38,7 @@
 
 ## Conclusión
 
-
 ## ¿Listo para siguiente sprint?
+
 - [ ] Sí
 - [ ] No — razón:

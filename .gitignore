@@ -41,7 +41,17 @@ coverage/
 .coverage
 htmlcov/
 
+# Moodle: evitar versionar datos locales y la caché de PHPUnit.
+moodledata/
+.phpunit.result.cache
+
 # Datos sensibles
 *.pem
 *.key
 *.cert
+# Certificados X.509 (públicos o con cadena); pueden exponer la infraestructura y suelen ir junto a su clave privada
+*.crt
+# Contenedores PKCS#12: guardan el certificado Y la clave privada (a menudo con contraseña débil)
+*.p12
+# Igual que .p12 (formato PKCS#12 usado en Windows); nunca deben versionarse
+*.pfx

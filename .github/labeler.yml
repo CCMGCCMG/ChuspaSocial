@@ -1,0 +1,19 @@
+docs:
+  - changed-files:
+      - any-glob-to-any-file: 'docs/**'
+
+chore:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+'módulo:datos':
+  - changed-files:
+      - any-glob-to-any-file: 'src/db/**'
+
+'módulo:idioma':
+  - changed-files:
+      - any-glob-to-any-file: 'src/lang/**'
+
+test:
+  - changed-files:
+      - any-glob-to-any-file: 'src/tests/**'

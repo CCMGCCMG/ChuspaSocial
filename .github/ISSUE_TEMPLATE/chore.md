@@ -6,6 +6,10 @@ labels: "chore"
 
 ## Descripción
 
+## Módulo
+
+## Archivo a modificar
+
 ## Criterios de aceptación
 - [ ]
 - [ ]

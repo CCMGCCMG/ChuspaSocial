@@ -1,0 +1,22 @@
+# CODEOWNERS — ChuspaSocial
+# Asigna automáticamente revisores según la parte del repositorio que toque el PR.
+# Los equipos son marcadores; el docente los ajustará a los equipos reales.
+# Importante: cuando varias reglas coinciden, manda la última.
+
+# Regla general: todo lo que no esté cubierto más abajo
+*                @sis-inf/docentes
+
+# Documentación del proyecto
+/docs/           @sis-inf/docs
+
+# Configuración del repositorio: plantillas, workflows y CI
+/.github/        @sis-inf/docentes
+
+# Esquema y migraciones de la base de datos
+/src/db/         @sis-inf/docentes
+
+# Clases del plugin
+/src/classes/    @sis-inf/docentes
+
+# Pruebas automatizadas
+/tests/          @sis-inf/docentes
