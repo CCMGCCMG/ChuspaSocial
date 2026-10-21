@@ -41,6 +41,16 @@ class report_service {
             $report->timeresolved = time();
             $DB->update_record('local_chuspasocial_report', $report);
 
+            // Ocultar el contenido reportado.
+            if ($report->itemtype === 'post') {
+                $DB->set_field(
+                    'local_chuspasocial_post',
+                    'hidden',
+                    1,
+                    ['id' => $report->itemid]
+                );
+            }
+
             // Confirmar los cambios de la base de datos.
             $transaction->allow_commit();
         } catch (\Throwable $e) {
