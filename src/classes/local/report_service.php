@@ -30,5 +30,22 @@ class report_service {
             '*',
             MUST_EXIST
         );
+
+         // Iniciar la transaccion.
+        $transaction = $DB->start_delegated_transaction();
+
+        try {
+            // Marcar el reporte como resuelto.
+            $report->status = 'resolved';
+            $report->resolvedby = $USER->id;
+            $report->timeresolved = time();
+            $DB->update_record('local_chuspasocial_report', $report);
+
+            // Confirmar los cambios de la base de datos.
+            $transaction->allow_commit();
+        } catch (\Throwable $e) {
+            // Revertir los cambios si hay un error.
+            $transaction->rollback($e);
+        }
     }
 }
