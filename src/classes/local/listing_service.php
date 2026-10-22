@@ -173,6 +173,10 @@ class listing_service {
         $listing->set('userid', (int) $USER->id);
         $listing->create();
 
+        if (!empty($data->listingphoto)) {
+            self::save_photos((int) $listing->get('id'), (int) $data->listingphoto);
+        }
+
         return $listing;
     }
     /**
@@ -239,6 +243,10 @@ class listing_service {
         }
 
         $listing->update();
+
+        if (!empty($data->listingphoto)) {
+            self::save_photos($listingid, (int) $data->listingphoto);
+        }
 
         return $listing;
     }
