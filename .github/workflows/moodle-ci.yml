@@ -63,6 +63,12 @@ jobs:
           DB: pgsql
           MOODLE_BRANCH: MOODLE_405_STABLE
 
+      - name: Run phplint
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phplint ./plugin/src
+        env:
+          MOODLE_BRANCH: MOODLE_405_STABLE
+
       - name: Validate upgrade savepoints
         run: moodle-plugin-ci savepoints ./plugin/src
         env:

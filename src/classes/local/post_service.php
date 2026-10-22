@@ -4,6 +4,7 @@ namespace local_chuspasocial\local;
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_tag_tag;
 use local_chuspasocial\local\persistent\post;
 use moodle_exception;
 
@@ -20,9 +21,10 @@ class post_service {
      * @param int $postid ID de la publicacion a actualizar.
      * @param string $content Nuevo contenido.
      * @param int $format Formato del contenido.
+     * @param array $tags Tags de la publicacion.
      * @throws moodle_exception Si el usuario actual no es el autor.
      */
-    public static function update_post(int $postid, string $content, int $format): void {
+    public static function update_post(int $postid, string $content, int $format, array $tags = []): void {
         global $USER;
 
         // Instanciar la publicacion existente.
@@ -47,6 +49,22 @@ class post_service {
 
         // Guardar los cambios.
         $post->update();
+
+        // Determinar el contexto de la publicacion.
+        if ((int) $post->get('courseid') > 0) {
+            $context = \context_course::instance((int) $post->get('courseid'));
+        } else {
+            $context = \context_system::instance();
+        }
+
+        // Actualizar los tags de la publicacion.
+        core_tag_tag::set_item_tags(
+            'local_chuspasocial',
+            'local_chuspasocial_post',
+            $postid,
+            $context,
+            $tags
+        );
     }
 
     /**
@@ -119,6 +137,13 @@ class post_service {
                 $postid
             );
 
+            // Eliminar los tags de la publicacion.
+            core_tag_tag::remove_all_item_tags(
+                'local_chuspasocial',
+                'local_chuspasocial_post',
+                $postid
+            );
+
             // Eliminar la publicacion.
             $DB->delete_records(
                 'local_chuspasocial_post',
@@ -144,11 +169,21 @@ class post_service {
         $event->trigger();
     }
     
-    public static function create_post(string $content, int $format, string $type = 'post'): int {
+    /**
+     * Crea una publicacion.
+     *
+     * @param string $content Contenido de la publicacion.
+     * @param int $format Formato del contenido.
+     * @param string $type Tipo de publicacion.
+     * @param array $tags Tags de la publicacion.
+     * @return int ID de la publicacion creada.
+     */
+    public static function create_post(string $content, int $format, string $type = 'post', array $tags = []): int {
         global $USER, $DB;
 
+        $context = \context_system::instance();
+
         if ($type === 'announcement') {
-            $context = \context_system::instance();
             if (!has_capability('local/chuspasocial:postannouncement', $context)) {
                 throw new \required_capability_exception($context, 'local/chuspasocial:postannouncement', 'nopermissions', '');
             }
@@ -162,6 +197,62 @@ class post_service {
         $record->timecreated = time();
         $record->timemodified = time();
 
-        return $DB->insert_record('local_chuspasocial_post', $record);
+        $postid = $DB->insert_record('local_chuspasocial_post', $record);
+
+        // Guardar los tags de la publicacion.
+        core_tag_tag::set_item_tags(
+            'local_chuspasocial',
+            'local_chuspasocial_post',
+            $postid,
+            $context,
+            $tags
+        );
+
+        return $postid;
+    }
+
+    /**
+     * Indica si un usuario puede ver una publicacion.
+     *
+     * - courseid 0 (muro general): requiere local/chuspasocial:view en el sistema.
+     * - courseid > 0: requiere estar inscrito o tener moodle/course:view.
+     * - Si la publicacion esta oculta: solo el autor o quien tenga local/chuspasocial:moderate.
+     *
+     * @param post $post Publicacion a consultar.
+     * @param int $userid Id del usuario que intenta verla.
+     * @return bool
+     */
+    public static function can_view(post $post, int $userid): bool {
+        $courseid = (int) $post->get('courseid');
+
+        if ($courseid === 0) {
+            // Muro general: se evalua en el contexto del sistema.
+            $context = \context_system::instance();
+            if (!has_capability('local/chuspasocial:view', $context, $userid)) {
+                return false;
+            }
+        } else {
+            // Publicacion de materia: solo inscritos o con acceso al curso.
+            $context = \context_course::instance($courseid, IGNORE_MISSING);
+            if (!$context) {
+                return false;
+            }
+            if (!is_enrolled($context, $userid, '', true)
+                    && !has_capability('moodle/course:view', $context, $userid)) {
+                return false;
+            }
+        }
+
+        // Publicacion oculta: solo el autor o un moderador.
+        if ((int) $post->get('hidden') === 1) {
+            if ((int) $post->get('userid') === $userid) {
+                return true;
+            }
+            // La capability puede no estar definida todavia (igual que en delete_post()).
+            return get_capability_info('local/chuspasocial:moderate')
+                && has_capability('local/chuspasocial:moderate', $context, $userid);
+        }
+
+        return true;
     }
 }

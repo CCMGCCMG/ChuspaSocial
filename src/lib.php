@@ -23,3 +23,34 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Adds the «Wall» link to the navigation of the course.
+ *
+ * The link goes to course.php, the wall of the course, and it is only added
+ * when the user has the local/chuspasocial:view capability in the course.
+ *
+ * @param navigation_node $navigation The course navigation node.
+ * @param stdClass $course The course.
+ * @param context_course $context The context of the course.
+ * @return void
+ */
+function local_chuspasocial_extend_navigation_course(
+    navigation_node $navigation,
+    stdClass $course,
+    context_course $context
+): void {
+    if (!has_capability('local/chuspasocial:view', $context)) {
+        return;
+    }
+
+    $url = new moodle_url('/local/chuspasocial/course.php', ['id' => $course->id]);
+    $navigation->add(
+        get_string('wall', 'local_chuspasocial'),
+        $url,
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_chuspasocial_wall',
+        new pix_icon('i/group', '')
+    );
+}

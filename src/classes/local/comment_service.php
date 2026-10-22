@@ -53,4 +53,46 @@ class comment_service {
             'timecreated ASC, id ASC'
         ));
     }
+    
+    /**
+     * Add a comment to a post and notify the post author.
+     *
+     * @param int $postid ID of the post being commented on.
+     * @param int $userid ID of the user creating the comment.
+     * @param string $content Text content of the comment.
+     * @return int The ID of the newly created comment record.
+     */
+    public static function add_comment(int $postid, int $userid, string $content): int {
+        global $DB;
+        $post = $DB->get_record('local_chuspasocial_post', [ 'id' => $postid ], 'id, userid');
+        if (!$post) {
+            throw new \moodle_exception('invalidpostid', 'local_chuspasocial');
+        }
+
+        $comment = new \stdClass();
+        $comment->postid = $postid;
+        $comment->userid = $userid;
+        $comment->content = $content;
+        $comment->timecreated = time();
+        
+        $commentid = $DB->insert_record('local_chuspasocial_comment', $comment);
+        if ($post->userid != $userid) {
+            $userfrom = \core_user::get_user($userid, '*', MUST_EXIST);
+            $userto = \core_user::get_user($post->userid, '*', MUST_EXIST);
+
+            $message = new \core\message\message();
+            $message->component = 'local_chuspasocial';
+            $message->name = 'newcomment';
+            $message->userfrom = $userfrom;
+            $message->userto = $userto;
+            $message->subject = 'Nuevo comentario en tu publicación';
+            $message->fullmessage = 'Alguien ha comentado tu publicación en ChuspaSocial.';
+            $message->fullmessageformat = FORMAT_PLAIN;
+            $message->smallmessage = 'Nuevo comentario en tu publicación.';
+            $message->notification = 1;
+            message_send($message);
+        }
+
+        return $commentid;
+    }
 }

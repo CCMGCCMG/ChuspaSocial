@@ -200,5 +200,57 @@ class listing_service_test extends advanced_testcase {
         $this->assertCount(1, $result);
         $this->assertEquals($id, $result[0]->id);
     }
-}
+    
+     /**
+     * Test case: Vincular cursos correctamente a un listado.
+     *
+     * @covers \local_chuspasocial\local\listing_service::set_courses
+     */
+    public function test_set_courses_vincular(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
 
+        $course1 = $generator->create_course();
+        $course2 = $generator->create_course();
+        $listingid = $this->crear_anuncio('Libro de Redes', 'Tanenbaum');
+
+        listing_service::set_courses($listingid, [ $course1->id, $course2->id ]);
+
+        $this->assertTrue($DB->record_exists('local_chuspasocial_lstcourse', [ 'listingid' => $listingid, 'courseid' => $course1->id ]));
+        $this->assertTrue($DB->record_exists('local_chuspasocial_lstcourse', [ 'listingid' => $listingid, 'courseid' => $course2->id ]));
+    }
+
+    /**
+     * Test case: Reemplazar cursos existentes por un nuevo conjunto de cursos.
+     *
+     * @covers \local_chuspasocial\local\listing_service::set_courses
+     */
+    public function test_set_courses_reemplazar(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+
+        $course1 = $generator->create_course();
+        $course2 = $generator->create_course();
+        $listingid = $this->crear_anuncio('Libro de Base de Datos', 'Date');
+
+        listing_service::set_courses($listingid, [ $course1->id ]);
+        listing_service::set_courses($listingid, [ $course2->id ]);
+
+        $this->assertFalse($DB->record_exists('local_chuspasocial_lstcourse', [ 'listingid' => $listingid, 'courseid' => $course1->id ]));
+        $this->assertTrue($DB->record_exists('local_chuspasocial_lstcourse', [ 'listingid' => $listingid, 'courseid' => $course2->id ]));
+    }
+
+    /**
+     * Test case: Intentar vincular cursos a un listado inexistente (debe lanzar una excepción).
+     *
+     * @covers \local_chuspasocial\local\listing_service::set_courses
+     */
+    public function test_set_courses_inexistente(): void {
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $invalidlistingid = 99999;
+
+        $this->expectException(\moodle_exception::class);
+        listing_service::set_courses($invalidlistingid, [ $course->id ]);
+    }
+}
