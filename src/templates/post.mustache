@@ -31,6 +31,7 @@
     * authorpictureurl - URL of the author profile picture.
     * timecreated - Unix timestamp of the post.
     * content - Post content, already formatted with format_text().
+    * isannouncement - Boolean, true when the post type is announcement.
 
     Example context (json):
     {
@@ -38,11 +39,18 @@
         "authorname": "Ana Pérez",
         "authorpictureurl": "https://example.com/pix/u/f2.png",
         "timecreated": 1760000000,
-        "content": "<p>Vendo mi libro de Cálculo I, casi nuevo.</p>"
+        "content": "<p>La biblioteca abre hasta las 20:00.</p>",
+        "isannouncement": true
     }
 }}
-<article class="card mb-3 post-item" data-postid="{{id}}">
+<article class="card mb-3 post-item{{#isannouncement}} local-chuspasocial-announcement{{/isannouncement}}" data-postid="{{id}}">
     <div class="card-body">
+        {{#isannouncement}}
+        <div class="mb-2 font-weight-bold">
+            {{#pix}} i/bullhorn, core {{/pix}}
+            Anuncio oficial
+        </div>
+        {{/isannouncement}}
         <div class="d-flex align-items-center mb-2">
             <img src="{{authorpictureurl}}" class="rounded-circle mr-2" width="35" height="35" alt="">
             <div>

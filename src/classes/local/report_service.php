@@ -1,0 +1,120 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Service to create content reports and notify the moderators.
+ *
+ * @package    local_chuspasocial
+ * @copyright  2026 SIS-INF
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace local_chuspasocial\local;
+
+use core\message\message;
+use core_user;
+use invalid_parameter_exception;
+use moodle_exception;
+
+/**
+ * Service to create content reports and notify the moderators.
+ *
+ * @package    local_chuspasocial
+ */
+class report_service {
+    /** @var string[] Types of content that can be reported. */
+    private const ITEMTYPES = ['post', 'comment', 'listing'];
+
+    /**
+     * Create a report and notify the moderators.
+     *
+     * @param \stdClass $data Object with userid (reporter), itemtype, itemid and reason.
+     * @return \stdClass The created report, with the id of the reporter in userid.
+     * @throws invalid_parameter_exception When the item type is not valid.
+     * @throws moodle_exception When the user already reported the same content.
+     */
+    public static function create_report(\stdClass $data): \stdClass {
+        global $DB;
+
+        if (!in_array($data->itemtype, self::ITEMTYPES, true)) {
+            throw new invalid_parameter_exception('Invalid report item type: ' . $data->itemtype);
+        }
+
+        $exists = $DB->record_exists('local_chuspasocial_report', [
+            'reporterid' => $data->userid,
+            'itemtype' => $data->itemtype,
+            'itemid' => $data->itemid,
+        ]);
+        if ($exists) {
+            throw new moodle_exception('reportsent', 'local_chuspasocial');
+        }
+
+        $record = (object) [
+            'itemtype' => $data->itemtype,
+            'itemid' => (int) $data->itemid,
+            'reporterid' => (int) $data->userid,
+            'reason' => $data->reason,
+            'status' => 'open',
+            'timecreated' => time(),
+        ];
+        $record->id = $DB->insert_record('local_chuspasocial_report', $record);
+
+        self::notify_moderators($record);
+
+        $report = clone $record;
+        $report->userid = $record->reporterid;
+        return $report;
+    }
+
+    /**
+     * Send the newreport notification to every user who can moderate, except the reporter.
+     *
+     * @param \stdClass $report The report record just created.
+     */
+    private static function notify_moderators(\stdClass $report): void {
+        // The capability is not defined yet in db/access.php: nobody to notify until it is.
+        if (!get_capability_info('local/chuspasocial:moderate')) {
+            return;
+        }
+
+        $reporter = core_user::get_user($report->reporterid);
+        $moderators = get_users_by_capability(\context_system::instance(), 'local/chuspasocial:moderate', 'u.*');
+        if (!$reporter || !$moderators) {
+            return;
+        }
+
+        $item = $report->itemtype . ' #' . $report->itemid;
+        foreach ($moderators as $moderator) {
+            if ((int) $moderator->id === (int) $report->reporterid) {
+                continue;
+            }
+
+            $message = new message();
+            $message->component = 'local_chuspasocial';
+            $message->name = 'newreport';
+            $message->userfrom = $reporter;
+            $message->userto = $moderator;
+            $message->subject = get_string('messageprovider:newreport_subject', 'local_chuspasocial', $item);
+            $message->fullmessage = get_string('reportreason', 'local_chuspasocial') . ': ' . $report->reason;
+            $message->fullmessageformat = FORMAT_PLAIN;
+            $message->fullmessagehtml = '';
+            $message->smallmessage = $message->subject;
+            $message->notification = 1;
+
+            message_send($message);
+        }
+    }
+}

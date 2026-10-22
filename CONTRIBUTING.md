@@ -106,6 +106,30 @@ chore: configurar phpcs con el estándar de Moodle
 
 ---
 
+## Verificaciones antes de abrir un PR
+
+Antes de abrir un Pull Request, ejecuta localmente las siguientes verificaciones:
+
+### PHP CodeSniffer
+
+Para comprobar que el código cumple con los estándares de Moodle:
+
+```bash
+vendor/bin/phpcs
+```
+
+### PHPUnit
+
+Para ejecutar las pruebas automatizadas:
+
+```bash
+vendor/bin/phpunit
+```
+
+Si alguna verificación presenta errores, corrígelos antes de abrir el Pull Request.
+
+---
+
 ## Ramas del proyecto
 
 | Rama | Propósito |

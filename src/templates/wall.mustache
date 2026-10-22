@@ -20,10 +20,41 @@
     Wall template for local_chuspasocial.
 
     Context variables required for this template:
-    * none
+    * posts - List of posts of the wall. Each post is rendered with the
+      local_chuspasocial/post template and has:
+        * id - Post id.
+        * authorname - Full name of the author.
+        * authorpictureurl - URL of the author profile picture.
+        * timecreated - Unix timestamp of the post.
+        * content - Post content, already formatted with format_text().
+        * tags - List of tags of the post (name and url).
 
     Example context (json):
-    {}
+    {
+        "posts": [
+            {
+                "id": 1,
+                "authorname": "Ana Pérez",
+                "authorpictureurl": "https://example.com/pix/u/f2.png",
+                "timecreated": 1760000000,
+                "content": "<p>Vendo mi libro de Cálculo I, casi nuevo.</p>",
+                "tags": [
+                    {"name": "calculo", "url": "https://example.com/tag/index.php?tag=calculo"}
+                ]
+            },
+            {
+                "id": 2,
+                "authorname": "Luis Mamani",
+                "authorpictureurl": "https://example.com/pix/u/f3.png",
+                "timecreated": 1760003600,
+                "content": "<p>Busco apuntes de Física Básica I.</p>",
+                "tags": []
+            }
+        ]
+    }
 }}
 <div class="local_chuspasocial_wall" data-region="wall">
+    {{#posts}}
+        {{> local_chuspasocial/post}}
+    {{/posts}}
 </div>

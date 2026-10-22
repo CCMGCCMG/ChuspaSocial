@@ -178,3 +178,20 @@ XMLDB no tiene un tipo enum, por lo que `type` se define como `CHAR` y sus valor
 
 - **postid:** relación con `local_chuspasocial_post`; una publicación puede recibir varias reacciones.
 - **userid:** relación con `user`; un usuario puede reaccionar a varias publicaciones.
+
+## Tabla `local_chuspasocial_lstcourse` (vínculos anuncio ↔ materia)
+
+Almacena los vínculos entre los anuncios de libros y las materias (cursos) en las que se ofrecen. Cada fila relaciona un anuncio con una materia.
+
+| Campo | Tipo XMLDB | Nulo | Descripción |
+|---|---|---|---|
+| `id` | INT(10), secuencia | NO | Clave primaria autoincremental del vínculo. |
+| `listingid` | INT(10) | NO | ID del anuncio de libro (referencia a `local_chuspasocial_listing.id`). |
+| `courseid` | INT(10) | NO | ID de la materia (referencia a `course.id`). |
+
+### Relaciones con otras tablas
+
+- **listingid:** relación con `local_chuspasocial_listing`; un anuncio puede estar vinculado a varias materias.
+- **courseid:** relación con `course`; una materia puede tener varios anuncios vinculados.
+
+La tabla resuelve la relación de muchos a muchos entre anuncios y materias: permite consultar los libros de las materias en las que está inscrito un usuario.

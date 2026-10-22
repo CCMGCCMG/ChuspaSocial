@@ -25,12 +25,26 @@ class hook_callbacks {
             return;
         }
 
-        $hook->get_primaryview()->add(
+        $primaryview = $hook->get_primaryview();
+
+        $primaryview->add(
             get_string('pluginname', 'local_chuspasocial'),
             new \moodle_url('/local/chuspasocial/index.php'),
             \navigation_node::TYPE_CUSTOM,
             null,
             'chuspasocial'
         );
+
+        // Enlace "Libros": solo si el marketplace está habilitado y el usuario tiene permiso.
+        if (get_config('local_chuspasocial', 'enablemarketplace')
+                && has_capability('local/chuspasocial:viewmarketplace', \context_system::instance())) {
+            $primaryview->add(
+                get_string('books', 'local_chuspasocial'),
+                new \moodle_url('/local/chuspasocial/marketplace.php'),
+                \navigation_node::TYPE_CUSTOM,
+                null,
+                'chuspasocial_books'
+            );
+        }
     }
 }

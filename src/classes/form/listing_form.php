@@ -54,6 +54,19 @@ class listing_form extends moodleform {
             ['multiple' => true]
         );
 
+        // Fotos del libro (maximo 3 archivos: jpg, png o webp).
+        $mform->addElement(
+            'filemanager',
+            'photos',
+            get_string('photos', 'local_chuspasocial'),
+            null,
+            [
+                'subdirs' => 0,
+                'maxfiles' => 3,
+                'accepted_types' => ['.jpg', '.png', '.webp'],
+            ]
+        );
+
         // Contacto externo (opcional)
         $mform->addelement('text', 'contact', get_string('contact', 'local_chuspasocial'));
         $mform->setType('contact', PARAM_TEXT); 
