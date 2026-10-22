@@ -45,7 +45,7 @@ jobs:
 
       - name: Run markdownlint-cli2
         if: steps.changed-files.outputs.any_changed == 'true'
-        uses: DavidAnson/markdownlint-cli2-action@v16
+        uses: DavidAnson/markdownlint-cli2-action@v24
         with:
           globs: ${{ steps.changed-files.outputs.all_changed_files }}
           
