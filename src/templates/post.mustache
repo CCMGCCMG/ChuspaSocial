@@ -51,5 +51,12 @@
             </div>
         </div>
         <div class="card-text">{{{content}}}</div>
+        <button type="button" 
+                class="btn btn-sm btn-outline-secondary chuspa-reaction-btn" 
+                data-action="toggle-reaction" 
+                aria-pressed="{{hasreacted}}">
+            <i class="fa fa-heart" aria-hidden="true"></i>
+            <span class="reaction-count">{{reactioncount}}</span>
+        </button>
     </div>
 </article>
