@@ -57,7 +57,6 @@
             </KEYS>
             <INDEXES>
                 <INDEX NAME="courseid_timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
-                <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
             </INDEXES>
         </TABLE>
     </TABLES>
