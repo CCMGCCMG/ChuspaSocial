@@ -40,9 +40,6 @@
                 <KEY NAME="postid" TYPE="foreign" FIELDS="postid" REFTABLE="local_chuspasocial_post" REFFIELDS="id" />
                 <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
             </KEYS>
-            <INDEXES>
-                <INDEX NAME="postid" UNIQUE="false" FIELDS="postid" />
-            </INDEXES>
         </TABLE>
         <TABLE NAME="local_chuspasocial_post" COMMENT="Publicaciones de ChuspaSocial">
             <FIELDS>
