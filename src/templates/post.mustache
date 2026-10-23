@@ -35,6 +35,9 @@
     * isannouncement - Boolean, true when the post type is announcement.
     * postid - Id of this post (same as id), passed to the comments template.
     * comments - List of comments, using the local_chuspasocial/comments context.
+    * tags - List of tags of the post. Each one has:
+        * name - Tag name.
+        * url - URL of the tag page.
 
     Example context (json):
     {
@@ -52,6 +55,10 @@
                 "timecreated": 1760003600,
                 "content": "<p>Gracias por el aviso.</p>"
             }
+        ],
+        "tags": [
+            {"name": "calculo", "url": "https://example.com/tag/index.php?tag=calculo"},
+            {"name": "venta", "url": "https://example.com/tag/index.php?tag=venta"}
         ]
     }
 }}
@@ -71,6 +78,14 @@
             </div>
         </div>
         <div class="card-text">{{{content}}}</div>
+        {{#tags.0}}
+        <div class="mt-2">
+            <span class="sr-only">{{#str}} tags, core_tag {{/str}}</span>
+            {{#tags}}
+            <a href="{{url}}" class="badge badge-info mr-1">{{name}}</a>
+            {{/tags}}
+        </div>
+        {{/tags.0}}
         <button type="button" class="btn btn-link mt-2" data-action="report" data-postid="{{id}}"
                 aria-label="{{#str}} chuspasocial:report, local_chuspasocial {{/str}}">
             {{#str}} chuspasocial:report, local_chuspasocial {{/str}}
