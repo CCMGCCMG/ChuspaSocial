@@ -10,6 +10,7 @@
 | Plugin local | Tipo de plugin de Moodle (local_) que agrega funcionalidad propia al sitio. |
 | Publicación | Mensaje de texto, con imágenes opcionales, que un usuario comparte en el muro. |
 | Marketplace | Sección para publicar y buscar anuncios de libros entre miembros de la institución. |
+| Materia | Curso de Moodle cuyo muro solo es visible para los usuarios inscritos. |
 | Reacción | Indicador de aprobación que un usuario puede dar a una publicación. |
 | Reporte | Aviso que envía un usuario sobre contenido inapropiado para que un moderador lo revise. |
 | Tag | Etiqueta temática asociada a una publicación, gestionada con el sistema de etiquetas de Moodle. |
