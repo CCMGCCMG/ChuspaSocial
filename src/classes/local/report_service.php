@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -115,6 +116,35 @@ class report_service {
             $message->notification = 1;
 
             message_send($message);
+        }
+    }
+
+    /**
+     * Mark a report as resolved and hide the reported content.
+     *
+     * @param int $reportid Id of the report to resolve.
+     * @throws \required_capability_exception When the user cannot moderate.
+     */
+    public static function resolve_and_hide(int $reportid): void {
+        global $DB, $USER;
+
+        require_capability('local/chuspasocial:moderate', \context_system::instance());
+
+        $report = $DB->get_record('local_chuspasocial_report', ['id' => $reportid], '*', MUST_EXIST);
+
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            $report->status = 'resolved';
+            $report->resolvedby = $USER->id;
+            $report->timeresolved = time();
+            $DB->update_record('local_chuspasocial_report', $report);
+
+            if ($report->itemtype === 'post') {
+                $DB->set_field('local_chuspasocial_post', 'hidden', 1, ['id' => $report->itemid]);
+            }
+            $transaction->allow_commit();
+        } catch (\Throwable $e) {
+            $transaction->rollback($e);
         }
     }
 }
