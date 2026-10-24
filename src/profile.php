@@ -30,6 +30,9 @@ require_login();
 
 $context = context_system::instance();
 
+require_capability('local/chuspasocial:view', $context);
+$PAGE->set_pagelayout('standard');
+
 $user = core_user::get_user($id, '*', MUST_EXIST);
 if ($user->deleted) {
     throw new moodle_exception('invaliduserid');
