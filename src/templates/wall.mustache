@@ -28,6 +28,7 @@
         * timecreated - Unix timestamp of the post.
         * content - Post content, already formatted with format_text().
         * tags - List of tags of the post (name and url).
+      Empty or omitted when there are no posts.
 
     Example context (json):
     {
@@ -56,5 +57,8 @@
 <div class="local_chuspasocial_wall" data-region="wall">
     {{#posts}}
         {{> local_chuspasocial/post}}
+    {{/posts}}
+    {{^posts}}
+        <p class="text-muted" data-region="wall-empty">Aún no hay publicaciones</p>
     {{/posts}}
 </div>

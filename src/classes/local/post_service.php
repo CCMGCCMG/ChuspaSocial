@@ -1,8 +1,20 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace local_chuspasocial\local;
-
-defined('MOODLE_INTERNAL') || die();
 
 use core_tag_tag;
 use local_chuspasocial\local\persistent\post;
@@ -11,10 +23,11 @@ use moodle_exception;
 /**
  * Servicio para la gestion de publicaciones (posts).
  *
- * @package local_chuspasocial
+ * @package    local_chuspasocial
+ * @copyright  2026 SIS-INF
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class post_service {
-
     /**
      * Actualiza el contenido y formato de un post existente.
      *
@@ -22,9 +35,16 @@ class post_service {
      * @param string $content Nuevo contenido.
      * @param int $format Formato del contenido.
      * @param array $tags Tags de la publicacion.
+     * @param int $draftitemid Draft area itemid with the images of the post (0 = no changes).
      * @throws moodle_exception Si el usuario actual no es el autor.
      */
-    public static function update_post(int $postid, string $content, int $format, array $tags = []): void {
+    public static function update_post(
+        int $postid,
+        string $content,
+        int $format,
+        array $tags = [],
+        int $draftitemid = 0
+    ): void {
         global $USER;
 
         // Instanciar la publicacion existente.
@@ -43,7 +63,7 @@ class post_service {
 
         // Actualizar los datos.
         $post->set('content', $content);
-        $post->set('format', $format);
+        $post->set('contentformat', $format);
         $post->set('timemodified', time());
         $post->set('usermodified', $USER->id);
 
@@ -65,6 +85,9 @@ class post_service {
             $context,
             $tags
         );
+
+        // Save the images of the post.
+        self::save_post_images($draftitemid, $context, $postid);
     }
 
     /**
@@ -159,7 +182,6 @@ class post_service {
 
             // Confirmar los cambios de la base de datos.
             $transaction->allow_commit();
-
         } catch (\Throwable $e) {
             // Revertir los cambios de la transaccion si hay un error.
             $transaction->rollback($e);
@@ -168,47 +190,75 @@ class post_service {
         // Registrar el evento despues de confirmar la transaccion.
         $event->trigger();
     }
-    
+
     /**
      * Crea una publicacion.
      *
+     * @param int $courseid ID del curso, o 0 para el muro general.
      * @param string $content Contenido de la publicacion.
      * @param int $format Formato del contenido.
-     * @param string $type Tipo de publicacion.
-     * @param array $tags Tags de la publicacion.
-     * @return int ID de la publicacion creada.
+     * @return post Publicacion creada.
      */
-    public static function create_post(string $content, int $format, string $type = 'post', array $tags = []): int {
-        global $USER, $DB;
+    public static function create_post(int $courseid, string $content, int $format): post {
+        global $USER;
 
-        $context = \context_system::instance();
-
-        if ($type === 'announcement') {
-            if (!has_capability('local/chuspasocial:postannouncement', $context)) {
-                throw new \required_capability_exception($context, 'local/chuspasocial:postannouncement', 'nopermissions', '');
-            }
+        // Determinar el contexto de la publicacion.
+        if ($courseid === 0) {
+            $context = \context_system::instance();
+        } else {
+            $context = \context_course::instance($courseid);
         }
 
-        $record = new \stdClass();
-        $record->userid = $USER->id;
-        $record->content = $content;
-        $record->format = $format;
-        $record->type = $type;
-        $record->timecreated = time();
-        $record->timemodified = time();
+        // Verificar el permiso para publicar.
+        require_capability('local/chuspasocial:post', $context);
 
-        $postid = $DB->insert_record('local_chuspasocial_post', $record);
+        // Exigir inscripcion activa cuando la publicacion pertenece a un curso.
+        if ($courseid > 0 && !is_enrolled($context, $USER->id, '', true)) {
+            throw new \moodle_exception('notenrolled', 'error');
+        }
 
-        // Guardar los tags de la publicacion.
-        core_tag_tag::set_item_tags(
+        // Preparar la nueva publicacion.
+        $now = time();
+        $post = new post(0, (object) [
+            'userid' => $USER->id,
+            'courseid' => $courseid,
+            'type' => post::TYPE_POST,
+            'content' => $content,
+            'contentformat' => $format,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+
+        // Guardar y devolver la publicacion.
+        $post->create();
+
+        return $post;
+    }
+
+    /**
+     * Save the images of a draft area in the postimage file area of the post.
+     *
+     * @param int $draftitemid Draft area itemid with the images (0 = nothing to save).
+     * @param \context $context Context of the post.
+     * @param int $postid Id of the post, used as itemid of the file area.
+     */
+    private static function save_post_images(int $draftitemid, \context $context, int $postid): void {
+        if (empty($draftitemid)) {
+            return;
+        }
+
+        file_save_draft_area_files(
+            $draftitemid,
+            $context->id,
             'local_chuspasocial',
-            'local_chuspasocial_post',
+            'postimage',
             $postid,
-            $context,
-            $tags
+            [
+                'accepted_types' => ['jpg', 'png', 'webp'],
+                'maxfiles' => (int) get_config('local_chuspasocial', 'maxpostimages') ?: 5,
+                'subdirs' => false,
+            ]
         );
-
-        return $postid;
     }
 
     /**
@@ -237,8 +287,10 @@ class post_service {
             if (!$context) {
                 return false;
             }
-            if (!is_enrolled($context, $userid, '', true)
-                    && !has_capability('moodle/course:view', $context, $userid)) {
+            if (
+                !is_enrolled($context, $userid, '', true)
+                && !has_capability('moodle/course:view', $context, $userid)
+            ) {
                 return false;
             }
         }
@@ -254,5 +306,68 @@ class post_service {
         }
 
         return true;
+    }
+
+    /**
+     * Comprueba si el usuario actual puede publicar anuncios oficiales.
+     *
+     * @param int $courseid ID del curso, o 0 para el contexto del sistema.
+     * @return bool true si tiene la capacidad, false en caso contrario.
+     */
+    public static function can_post_announcement(int $courseid): bool {
+        if ($courseid > 0) {
+            $context = \context_course::instance($courseid);
+        } else {
+            $context = \context_system::instance();
+        }
+
+        return has_capability('local/chuspasocial:postannouncement', $context);
+    }
+    /**
+     * Obtiene las publicaciones visibles de una materia.
+     *
+     * @param int $courseid ID de la materia.
+     * @param int $page Numero de pagina (base 0).
+     * @param int $perpage Publicaciones por pagina.
+     * @return array Lista de publicaciones, las mas recientes primero.
+     */
+    public static function get_course_feed(int $courseid, int $page, int $perpage): array {
+        global $DB;
+
+        return array_values($DB->get_records(
+            'local_chuspasocial_post',
+            ['courseid' => $courseid, 'hidden' => 0],
+            'timecreated DESC, id DESC',
+            '*',
+            $page * $perpage,
+            $perpage
+        ));
+    }
+
+    /**
+     * Obtiene el muro general: publicaciones generales y de mis materias.
+     *
+     * @param int $page Numero de pagina (base 0).
+     * @param int $perpage Publicaciones por pagina.
+     * @return array Registros de local_chuspasocial_post.
+     */
+    public static function get_general_feed(int $page, int $perpage): array {
+        global $DB;
+
+        // Cursos en los que el usuario esta inscrito, mas el muro general (courseid 0).
+        $courseids = array_keys(enrol_get_my_courses('id'));
+        $courseids[] = 0;
+
+        [$insql, $params] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cid');
+
+        return array_values($DB->get_records_select(
+            'local_chuspasocial_post',
+            "courseid $insql",
+            $params,
+            'timecreated DESC, id DESC',
+            '*',
+            $page * $perpage,
+            $perpage
+        ));
     }
 }

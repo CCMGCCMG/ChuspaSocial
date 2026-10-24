@@ -55,44 +55,47 @@ class comment_service {
     }
     
     /**
-     * Add a comment to a post and notify the post author.
+     * Add a comment to a visible post.
      *
      * @param int $postid ID of the post being commented on.
-     * @param int $userid ID of the user creating the comment.
      * @param string $content Text content of the comment.
-     * @return int The ID of the newly created comment record.
+     * @return \local_chuspasocial\local\persistent\comment The created comment.
+     * @throws \moodle_exception If the post is not visible or the user cannot comment.
      */
-    public static function add_comment(int $postid, int $userid, string $content): int {
-        global $DB;
-        $post = $DB->get_record('local_chuspasocial_post', [ 'id' => $postid ], 'id, userid');
-        if (!$post) {
-            throw new \moodle_exception('invalidpostid', 'local_chuspasocial');
+    public static function add_comment(int $postid, string $content): \local_chuspasocial\local\persistent\comment {
+        global $USER;
+
+        // Load the post.
+        $post = new \local_chuspasocial\local\persistent\post($postid);
+
+        // Check whether the current user can view the post.
+        if (!post_service::can_view($post, (int) $USER->id)) {
+            throw new \moodle_exception('nopermissions', 'error', '', 'view this post');
         }
 
-        $comment = new \stdClass();
-        $comment->postid = $postid;
-        $comment->userid = $userid;
-        $comment->content = $content;
-        $comment->timecreated = time();
-        
-        $commentid = $DB->insert_record('local_chuspasocial_comment', $comment);
-        if ($post->userid != $userid) {
-            $userfrom = \core_user::get_user($userid, '*', MUST_EXIST);
-            $userto = \core_user::get_user($post->userid, '*', MUST_EXIST);
-
-            $message = new \core\message\message();
-            $message->component = 'local_chuspasocial';
-            $message->name = 'newcomment';
-            $message->userfrom = $userfrom;
-            $message->userto = $userto;
-            $message->subject = 'Nuevo comentario en tu publicación';
-            $message->fullmessage = 'Alguien ha comentado tu publicación en ChuspaSocial.';
-            $message->fullmessageformat = FORMAT_PLAIN;
-            $message->smallmessage = 'Nuevo comentario en tu publicación.';
-            $message->notification = 1;
-            message_send($message);
+        // Determine the context of the post.
+        $courseid = (int) $post->get('courseid');
+        if ($courseid > 0) {
+            $context = \context_course::instance($courseid);
+        } else {
+            $context = \context_system::instance();
         }
 
-        return $commentid;
+        // Check whether the current user can comment.
+        require_capability('local/chuspasocial:comment', $context);
+
+        // Create and return the comment.
+        $comment = new \local_chuspasocial\local\persistent\comment(0, (object) [
+            'postid' => $postid,
+            'userid' => (int) $USER->id,
+            'content' => $content,
+            'contentformat' => FORMAT_PLAIN,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+
+        $comment->create();
+
+        return $comment;
     }
 }

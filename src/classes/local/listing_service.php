@@ -217,4 +217,22 @@ class listing_service {
 
         return $listing;
     }
+    /**
+     * Marks a listing as sold. Only the author can do it.
+     *
+     * @param int $listingid ID of the listing to mark as sold.
+     * @throws moodle_exception If the current user is not the author.
+     */
+    public static function mark_sold(int $listingid): void {
+        global $USER;
+
+        $listing = new listing($listingid);
+
+        if ((int) $listing->get('userid') !== (int) $USER->id) {
+            throw new moodle_exception('nopermissions', 'error', '', 'mark this listing as sold');
+        }
+
+        $listing->set('status', listing::STATUS_SOLD);
+        $listing->update();
+    }
 }
