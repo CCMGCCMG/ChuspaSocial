@@ -96,6 +96,14 @@ class comment_service {
 
         $comment->create();
 
+        // Trigger the comment_created event once the comment is saved.
+        \local_chuspasocial\event\comment_created::create([
+            'objectid' => $comment->get('id'),
+            'context' => $context,
+            'userid' => (int) $USER->id,
+            'other' => ['postid' => $postid],
+        ])->trigger();
+
         return $comment;
     }
 }
