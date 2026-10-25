@@ -206,3 +206,35 @@ La directiva `max_input_vars` de PHP está configurada con un valor menor que `5
 
 El valor efectivo debe ser `5000` o superior.
 
+### Error `dataroot not writable`
+
+**Síntoma**
+
+Durante la instalación o al abrir Moodle, aparece el mensaje:
+
+`$CFG->dataroot is not writable, admin has to fix directory permissions! Exiting.`
+
+**Causa**
+
+Moodle no puede escribir en la carpeta `moodledata`. Puede ocurrir porque la carpeta no existe, porque la ruta indicada en `--dataroot` (o en `$CFG->dataroot` de `config.php`) es incorrecta, o porque el usuario con el que corre Apache no tiene permisos de escritura sobre ella.
+
+**Solución**
+
+1. Comprueba que la carpeta existe y que la ruta coincide con la de `config.php`:
+
+   ```powershell
+   Test-Path C:\xampp\moodledata
+   ```
+
+   Si responde `False`, créala con `mkdir C:\xampp\moodledata`.
+
+2. Haz clic derecho en `C:\xampp\moodledata` > **Propiedades** > **Seguridad** > **Editar**.
+3. Selecciona el grupo `Users` (o el usuario con el que corre Apache) y marca **Modificar**.
+4. Aplica los cambios y reinicia **Apache** desde el XAMPP Control Panel.
+5. Verifica el permiso. Debe aparecer `Modify` o `FullControl`:
+
+   ```powershell
+   icacls C:\xampp\moodledata
+   ```
+
+La carpeta `moodledata` debe estar **fuera** de `htdocs`.
