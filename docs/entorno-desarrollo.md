@@ -208,22 +208,23 @@ El valor efectivo debe ser `5000` o superior.
 
 ### Error `dataroot not writable`
 
-**Síntoma**
+#### Síntoma
 
 Durante la instalación o al abrir Moodle, aparece el mensaje:
 
 `$CFG->dataroot is not writable, admin has to fix directory permissions! Exiting.`
 
-**Causa**
+#### Causa
 
 Moodle no puede escribir en la carpeta `moodledata`. Puede ocurrir porque la carpeta no existe, porque la ruta indicada en `--dataroot` (o en `$CFG->dataroot` de `config.php`) es incorrecta, o porque el usuario con el que corre Apache no tiene permisos de escritura sobre ella.
 
-**Solución**
+#### Solución
 
 1. Comprueba que la carpeta existe y que la ruta coincide con la de `config.php`:
 
    ```powershell
    Test-Path C:\xampp\moodledata
+   
    ```
 
    Si responde `False`, créala con `mkdir C:\xampp\moodledata`.
