@@ -105,4 +105,11 @@ $capabilities = array(
         ),
         'riskbitmask' => RISK_SPAM,
     ),
+    'local/chuspasocial:moderate' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
 );
