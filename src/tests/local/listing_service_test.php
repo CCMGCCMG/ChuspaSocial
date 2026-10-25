@@ -3,7 +3,7 @@
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, o
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
 // Moodle is distributed in the hope that it will be useful,
@@ -20,7 +20,7 @@
  * @package    local_chuspasocial
  * @category   test
  * @copyright  2026 sis-inf
- * @license    http://gnu.org GNU GPL v3 or late
+ * @license    http://gnu.org GNU GPL v3 or later
  */
 
 namespace local_chuspasocial\local;
@@ -35,7 +35,7 @@ use advanced_testcase;
  * @package    local_chuspasocial
  * @category   test
  * @copyright  2026 sis-inf
- * @license    http://gnu.org GNU GPL v3 or late
+ * @license    http://gnu.org GNU GPL v3 or later
  * @covers     \local_chuspasocial\local\listing_service::delete_listing
  */
 class listing_service_test extends advanced_testcase {
