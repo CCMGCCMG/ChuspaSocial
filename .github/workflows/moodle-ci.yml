@@ -108,5 +108,11 @@ jobs:
         env:
           MOODLE_BRANCH: MOODLE_405_STABLE
 
+      - name: Run behat
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci behat --profile chrome ./plugin/src
+        env:
+          MOODLE_BRANCH: MOODLE_405_STABLE
+
 
 
