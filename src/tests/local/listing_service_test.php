@@ -23,9 +23,9 @@
  * @license    http://gnu.org GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 namespace local_chuspasocial\local;
+
+defined('MOODLE_INTERNAL') || die();
 
 use advanced_testcase;
 
@@ -253,4 +253,97 @@ class listing_service_test extends advanced_testcase {
         $this->expectException(\moodle_exception::class);
         listing_service::set_courses($invalidlistingid, [ $course->id ]);
     }
+
+    /**
+     * Solo devuelve anuncios vinculados a las materias del usuario.
+     *
+     * @covers \local_chuspasocial\local\listing_service::get_for_my_courses
+     */
+    public function test_get_for_my_courses_solo_mis_materias(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $mycourse = $generator->create_course();
+        $othercourse = $generator->create_course();
+        $generator->enrol_user($user->id, $mycourse->id, 'student');
+
+        $mylistingid = $this->crear_anuncio('Calculo', 'Stewart');
+        $otherlistingid = $this->crear_anuncio('Fisica', 'Serway');
+        $DB->insert_record('local_chuspasocial_lstcourse', (object) [
+            'listingid' => $mylistingid,
+            'courseid' => $mycourse->id,
+        ]);
+        $DB->insert_record('local_chuspasocial_lstcourse', (object) [
+            'listingid' => $otherlistingid,
+            'courseid' => $othercourse->id,
+        ]);
+        $this->setUser($user);
+
+        $result = listing_service::get_for_my_courses(0, 10);
+
+        $this->assertCount(1, $result);
+        $this->assertEquals($mylistingid, $result[0]->id);
+    }
+
+    /**
+     * Excluye vendidos aunque pertenezcan a mis materias.
+     *
+     * @covers \local_chuspasocial\local\listing_service::get_for_my_courses
+     */
+    public function test_get_for_my_courses_excluye_vendidos(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $course = $generator->create_course();
+        $generator->enrol_user($user->id, $course->id, 'student');
+
+        $availableid = $this->crear_anuncio('Libro disponible', 'Autor A');
+        $soldid = $this->crear_anuncio('Libro vendido', 'Autor B');
+        $DB->set_field('local_chuspasocial_listing', 'status', 'sold', ['id' => $soldid]);
+        foreach ([$availableid, $soldid] as $listingid) {
+            $DB->insert_record('local_chuspasocial_lstcourse', (object) [
+                'listingid' => $listingid,
+                'courseid' => $course->id,
+            ]);
+        }
+        $this->setUser($user);
+
+        $result = listing_service::get_for_my_courses(0, 10);
+
+        $this->assertCount(1, $result);
+        $this->assertEquals($availableid, $result[0]->id);
+    }
+
+    /**
+     * No repite un anuncio vinculado a dos de mis materias.
+     *
+     * @covers \local_chuspasocial\local\listing_service::get_for_my_courses
+     */
+    public function test_get_for_my_courses_sin_duplicados(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $course1 = $generator->create_course();
+        $course2 = $generator->create_course();
+        $generator->enrol_user($user->id, $course1->id, 'student');
+        $generator->enrol_user($user->id, $course2->id, 'student');
+
+        $listingid = $this->crear_anuncio('Algebra', 'Baldor');
+        foreach ([$course1->id, $course2->id] as $courseid) {
+            $DB->insert_record('local_chuspasocial_lstcourse', (object) [
+                'listingid' => $listingid,
+                'courseid' => $courseid,
+            ]);
+        }
+        $this->setUser($user);
+
+        $result = listing_service::get_for_my_courses(0, 10);
+
+        $this->assertCount(1, $result);
+        $this->assertEquals($listingid, $result[0]->id);
+    }
 }
+
