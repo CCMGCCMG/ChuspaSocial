@@ -71,6 +71,16 @@
             </div>
         </div>
         <div class="card-text">{{{content}}}</div>
+
+        <div class="post-images d-flex flex-wrap mt-3">
+            {{#images}}
+            <img src="{{url}}"
+                 class="img-fluid rounded m-1"
+                 alt="{{filename}}"
+                 loading="lazy">
+            {{/images}}
+        </div>
+
         <button type="button" class="btn btn-link mt-2" data-action="report" data-postid="{{id}}"
                 aria-label="{{#str}} chuspasocial:report, local_chuspasocial {{/str}}">
             {{#str}} chuspasocial:report, local_chuspasocial {{/str}}
