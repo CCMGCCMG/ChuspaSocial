@@ -206,3 +206,61 @@ La directiva `max_input_vars` de PHP está configurada con un valor menor que `5
 
 El valor efectivo debe ser `5000` o superior.
 
+### Error `dataroot not writable`
+
+#### Síntoma
+
+Durante la instalación o al abrir Moodle, aparece el mensaje:
+
+`Fatal error: $CFG->dataroot is not writable, admin has to fix directory permissions! Exiting.`
+
+#### Causa
+
+Moodle no puede escribir en la carpeta `moodledata`. Puede ocurrir porque la carpeta no existe, porque la ruta indicada en `--dataroot` (o en `$CFG->dataroot` de `config.php`) es incorrecta, o porque el usuario con el que corre Apache no tiene permisos de escritura sobre ella.
+
+#### Solución
+
+#### En Windows
+
+1. Comprueba que la carpeta existe y que la ruta coincide con la de `config.php`:
+
+   ```powershell
+   Test-Path C:\xampp\moodledata
+   ```
+
+   Si responde `False`, créala con `mkdir C:\xampp\moodledata`.
+
+2. Haz clic derecho en `C:\xampp\moodledata` > **Propiedades** > **Seguridad** > **Editar**.
+3. Selecciona el grupo `Users` (o el usuario con el que corre Apache) y marca **Modificar**.
+4. Aplica los cambios y reinicia **Apache** desde el XAMPP Control Panel.
+5. Verifica el permiso. Debe aparecer `Modify` o `FullControl`:
+
+   ```powershell
+   icacls C:\xampp\moodledata
+   ```
+
+#### En Linux
+
+1. Crea la carpeta si no existe y asigna el usuario del servidor web (`www-data` en Debian/Ubuntu, `apache` en Fedora/RHEL):
+
+   ```bash
+   sudo mkdir -p /var/www/moodledata
+   sudo chown -R www-data:www-data /var/www/moodledata
+   sudo chmod -R 775 /var/www/moodledata
+   ```
+
+2. Reinicia el servidor web (por ejemplo, `sudo systemctl restart apache2`).
+
+#### En macOS
+
+1. Crea la carpeta y da permisos al usuario del servidor web (`_www` con el Apache del sistema; con XAMPP o MAMP suele ser `daemon`):
+
+   ```bash
+   sudo mkdir -p /usr/local/moodledata
+   sudo chown -R _www:_www /usr/local/moodledata
+   sudo chmod -R 775 /usr/local/moodledata
+   ```
+
+2. Reinicia Apache.
+
+La carpeta `moodledata` debe estar **fuera** de `htdocs`.

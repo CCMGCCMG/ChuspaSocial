@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -46,37 +47,54 @@ class report_service {
      * @throws invalid_parameter_exception When the item type is not valid.
      * @throws moodle_exception When the user already reported the same content.
      */
-    public static function create_report(\stdClass $data): \stdClass {
-        global $DB;
+    public static function create_report(
+        string $itemtype,
+        int $itemid,
+        string $reason
+    ): int {
+        global $DB, $USER;
 
-        if (!in_array($data->itemtype, self::ITEMTYPES, true)) {
-            throw new invalid_parameter_exception('Invalid report item type: ' . $data->itemtype);
+        if (!in_array($itemtype, self::ITEMTYPES, true)) {
+            throw new invalid_parameter_exception(
+                'Invalid report item type: ' . $itemtype
+            );
         }
 
-        $exists = $DB->record_exists('local_chuspasocial_report', [
-            'reporterid' => $data->userid,
-            'itemtype' => $data->itemtype,
-            'itemid' => $data->itemid,
-        ]);
-        if ($exists) {
+        $reason = trim($reason);
+
+        if ($itemid <= 0 || $reason === '') {
+            throw new invalid_parameter_exception(
+                'Invalid report item ID or reason.'
+            );
+        }
+
+        $conditions = [
+            'reporterid' => $USER->id,
+            'itemtype' => $itemtype,
+            'itemid' => $itemid,
+        ];
+
+        if ($DB->record_exists('local_chuspasocial_report', $conditions)) {
             throw new moodle_exception('reportsent', 'local_chuspasocial');
         }
 
         $record = (object) [
-            'itemtype' => $data->itemtype,
-            'itemid' => (int) $data->itemid,
-            'reporterid' => (int) $data->userid,
-            'reason' => $data->reason,
+            'itemtype' => $itemtype,
+            'itemid' => $itemid,
+            'reporterid' => $USER->id,
+            'reason' => $reason,
             'status' => 'open',
             'timecreated' => time(),
         ];
-        $record->id = $DB->insert_record('local_chuspasocial_report', $record);
+
+        $record->id = $DB->insert_record(
+            'local_chuspasocial_report',
+            $record
+        );
 
         self::notify_moderators($record);
 
-        $report = clone $record;
-        $report->userid = $record->reporterid;
-        return $report;
+        return (int) $record->id;
     }
 
     /**
@@ -115,6 +133,35 @@ class report_service {
             $message->notification = 1;
 
             message_send($message);
+        }
+    }
+
+    /**
+     * Mark a report as resolved and hide the reported content.
+     *
+     * @param int $reportid Id of the report to resolve.
+     * @throws \required_capability_exception When the user cannot moderate.
+     */
+    public static function resolve_and_hide(int $reportid): void {
+        global $DB, $USER;
+
+        require_capability('local/chuspasocial:moderate', \context_system::instance());
+
+        $report = $DB->get_record('local_chuspasocial_report', ['id' => $reportid], '*', MUST_EXIST);
+
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            $report->status = 'resolved';
+            $report->resolvedby = $USER->id;
+            $report->timeresolved = time();
+            $DB->update_record('local_chuspasocial_report', $report);
+
+            if ($report->itemtype === 'post') {
+                $DB->set_field('local_chuspasocial_post', 'hidden', 1, ['id' => $report->itemid]);
+            }
+            $transaction->allow_commit();
+        } catch (\Throwable $e) {
+            $transaction->rollback($e);
         }
     }
 }

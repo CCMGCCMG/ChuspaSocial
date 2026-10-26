@@ -194,53 +194,45 @@ class post_service {
     /**
      * Crea una publicacion.
      *
+     * @param int $courseid ID del curso, o 0 para el muro general.
      * @param string $content Contenido de la publicacion.
      * @param int $format Formato del contenido.
-     * @param string $type Tipo de publicacion.
-     * @param array $tags Tags de la publicacion.
-     * @param int $draftitemid Draft area itemid with the images of the post (0 = no images).
-     * @return int ID de la publicacion creada.
+     * @return post Publicacion creada.
      */
-    public static function create_post(
-        string $content,
-        int $format,
-        string $type = 'post',
-        array $tags = [],
-        int $draftitemid = 0
-    ): int {
-        global $USER, $DB;
+    public static function create_post(int $courseid, string $content, int $format): post {
+        global $USER;
 
-        $context = \context_system::instance();
-
-        if ($type === 'announcement') {
-            if (!has_capability('local/chuspasocial:postannouncement', $context)) {
-                throw new \required_capability_exception($context, 'local/chuspasocial:postannouncement', 'nopermissions', '');
-            }
+        // Determinar el contexto de la publicacion.
+        if ($courseid === 0) {
+            $context = \context_system::instance();
+        } else {
+            $context = \context_course::instance($courseid);
         }
 
-        $record = new \stdClass();
-        $record->userid = $USER->id;
-        $record->content = $content;
-        $record->format = $format;
-        $record->type = $type;
-        $record->timecreated = time();
-        $record->timemodified = time();
+        // Verificar el permiso para publicar.
+        require_capability('local/chuspasocial:post', $context);
 
-        $postid = $DB->insert_record('local_chuspasocial_post', $record);
+        // Exigir inscripcion activa cuando la publicacion pertenece a un curso.
+        if ($courseid > 0 && !is_enrolled($context, $USER->id, '', true)) {
+            throw new \moodle_exception('notenrolled', 'error');
+        }
 
-        // Guardar los tags de la publicacion.
-        core_tag_tag::set_item_tags(
-            'local_chuspasocial',
-            'local_chuspasocial_post',
-            $postid,
-            $context,
-            $tags
-        );
+        // Preparar la nueva publicacion.
+        $now = time();
+        $post = new post(0, (object) [
+            'userid' => $USER->id,
+            'courseid' => $courseid,
+            'type' => post::TYPE_POST,
+            'content' => $content,
+            'contentformat' => $format,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
 
-        // Save the images of the post.
-        self::save_post_images($draftitemid, $context, $postid);
+        // Guardar y devolver la publicacion.
+        $post->create();
 
-        return $postid;
+        return $post;
     }
 
     /**
@@ -314,5 +306,142 @@ class post_service {
         }
 
         return true;
+    }
+
+    /**
+     * Comprueba si el usuario actual puede publicar anuncios oficiales.
+     *
+     * @param int $courseid ID del curso, o 0 para el contexto del sistema.
+     * @return bool true si tiene la capacidad, false en caso contrario.
+     */
+    public static function can_post_announcement(int $courseid): bool {
+        if ($courseid > 0) {
+            $context = \context_course::instance($courseid);
+        } else {
+            $context = \context_system::instance();
+        }
+
+        return has_capability('local/chuspasocial:postannouncement', $context);
+    }
+    /**
+     * Obtiene las publicaciones visibles de una materia.
+     *
+     * @param int $courseid ID de la materia.
+     * @param int $page Numero de pagina (base 0).
+     * @param int $perpage Publicaciones por pagina.
+     * @return array Lista de publicaciones, las mas recientes primero.
+     */
+    public static function get_course_feed(int $courseid, int $page, int $perpage): array {
+        global $DB;
+
+        return array_values($DB->get_records(
+            'local_chuspasocial_post',
+            ['courseid' => $courseid, 'hidden' => 0],
+            'timecreated DESC, id DESC',
+            '*',
+            $page * $perpage,
+            $perpage
+        ));
+    }
+
+    /**
+     * Obtiene el muro general: publicaciones generales y de mis materias.
+     *
+     * @param int $page Numero de pagina (base 0).
+     * @param int $perpage Publicaciones por pagina.
+     * @return array Registros de local_chuspasocial_post.
+     */
+    public static function get_general_feed(int $page, int $perpage): array {
+        global $DB;
+
+        // Cursos en los que el usuario esta inscrito, mas el muro general (courseid 0).
+        $courseids = array_keys(enrol_get_my_courses('id'));
+        $courseids[] = 0;
+
+        [$insql, $params] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cid');
+
+        return array_values($DB->get_records_select(
+            'local_chuspasocial_post',
+            "courseid $insql",
+            $params,
+            'timecreated DESC, id DESC',
+            '*',
+            $page * $perpage,
+            $perpage
+        ));
+    }
+
+    /**
+     * Obtiene el feed personalizado: publicaciones de usuarios y tags que sigo.
+     *
+     * Solo incluye publicaciones que el usuario puede ver segun la misma regla
+     * que can_view(): muro general con capacidad, o materias donde esta inscrito.
+     *
+     * @param int $page Numero de pagina (base 0).
+     * @param int $perpage Publicaciones por pagina.
+     * @return array Lista de publicaciones, las mas recientes primero.
+     */
+    public static function get_personal_feed(int $page, int $perpage): array {
+        global $DB, $USER;
+
+        $context = \context_system::instance();
+
+        $params = [
+            'viewer1' => $USER->id,
+            'usertype' => 'user',
+            'viewer2' => $USER->id,
+            'tagtype' => 'tag',
+            'component' => 'local_chuspasocial',
+            'itemtype' => 'local_chuspasocial_post',
+        ];
+
+        // Visibilidad por curso, igual que can_view().
+        $visible = [];
+        if (has_capability('local/chuspasocial:view', $context)) {
+            $visible[] = 'p.courseid = 0';
+        }
+        if (has_capability('moodle/course:view', $context)) {
+            $visible[] = 'p.courseid > 0 AND EXISTS (
+                SELECT 1 FROM {course} c WHERE c.id = p.courseid
+            )';
+        } else {
+            $courseids = array_keys(enrol_get_my_courses('id'));
+            if (!empty($courseids)) {
+                [$insql, $inparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cid');
+                $visible[] = "p.courseid $insql";
+                $params += $inparams;
+            }
+        }
+        if (empty($visible)) {
+            return [];
+        }
+        $visiblesql = '(' . implode(') OR (', $visible) . ')';
+
+        $sql = "SELECT p.*
+                  FROM {local_chuspasocial_post} p
+                 WHERE p.hidden = 0
+                   AND ($visiblesql)
+                   AND (
+                       EXISTS (
+                           SELECT 1
+                             FROM {local_chuspasocial_follow} fu
+                            WHERE fu.userid = :viewer1
+                              AND fu.itemtype = :usertype
+                              AND fu.itemid = p.userid
+                       )
+                       OR EXISTS (
+                           SELECT 1
+                             FROM {local_chuspasocial_follow} ft
+                             JOIN {tag_instance} ti ON ti.tagid = ft.itemid
+                            WHERE ft.userid = :viewer2
+                              AND ft.itemtype = :tagtype
+                              AND ti.component = :component
+                              AND ti.itemtype = :itemtype
+                              AND ti.itemid = p.id
+                       )
+                   )
+              ORDER BY p.timecreated DESC, p.id DESC";
+
+        return array_values($DB->get_records_sql($sql, $params, $page * $perpage, $perpage));
     }
 }
