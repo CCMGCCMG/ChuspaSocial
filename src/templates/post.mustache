@@ -32,6 +32,8 @@
     * authorpictureurl - URL of the author profile picture.
     * timecreated - Unix timestamp of the post.
     * content - Post content, already formatted with format_text().
+    * reactions - Number of reactions on the post.
+    * hasreacted - Whether the current user has reacted to the post.
     * isannouncement - Boolean, true when the post type is announcement.
     * postid - Id of this post (same as id), passed to the comments template.
     * comments - List of comments, using the local_chuspasocial/comments context.
@@ -43,6 +45,8 @@
         "authorpictureurl": "https://example.com/pix/u/f2.png",
         "timecreated": 1760000000,
         "content": "<p>La biblioteca abre hasta las 20:00.</p>",
+        "reactions": 3,
+        "hasreacted": false,
         "isannouncement": true,
         "postid": 1,
         "comments": [
@@ -71,6 +75,16 @@
             </div>
         </div>
         <div class="card-text">{{{content}}}</div>
+        <div class="post-reactions">
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-action="toggle-reaction"
+                aria-pressed="{{hasreacted}}">
+                <span aria-hidden="true">♥</span>
+                <span data-region="reaction-count">{{reactions}}</span>
+            </button>
+        </div>
         <button type="button" class="btn btn-link mt-2" data-action="report" data-postid="{{id}}"
                 aria-label="{{#str}} chuspasocial:report, local_chuspasocial {{/str}}">
             {{#str}} chuspasocial:report, local_chuspasocial {{/str}}
