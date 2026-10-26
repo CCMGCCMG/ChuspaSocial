@@ -42,6 +42,8 @@
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="postid" TYPE="foreign" FIELDS="postid" REFTABLE="local_chuspasocial_post" REFFIELDS="id" />
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
             </KEYS>
         </TABLE>
         <TABLE NAME="local_chuspasocial_post" COMMENT="Publicaciones de ChuspaSocial">
