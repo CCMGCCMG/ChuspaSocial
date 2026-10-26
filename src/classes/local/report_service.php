@@ -47,37 +47,54 @@ class report_service {
      * @throws invalid_parameter_exception When the item type is not valid.
      * @throws moodle_exception When the user already reported the same content.
      */
-    public static function create_report(\stdClass $data): \stdClass {
-        global $DB;
+    public static function create_report(
+        string $itemtype,
+        int $itemid,
+        string $reason
+    ): int {
+        global $DB, $USER;
 
-        if (!in_array($data->itemtype, self::ITEMTYPES, true)) {
-            throw new invalid_parameter_exception('Invalid report item type: ' . $data->itemtype);
+        if (!in_array($itemtype, self::ITEMTYPES, true)) {
+            throw new invalid_parameter_exception(
+                'Invalid report item type: ' . $itemtype
+            );
         }
 
-        $exists = $DB->record_exists('local_chuspasocial_report', [
-            'reporterid' => $data->userid,
-            'itemtype' => $data->itemtype,
-            'itemid' => $data->itemid,
-        ]);
-        if ($exists) {
+        $reason = trim($reason);
+
+        if ($itemid <= 0 || $reason === '') {
+            throw new invalid_parameter_exception(
+                'Invalid report item ID or reason.'
+            );
+        }
+
+        $conditions = [
+            'reporterid' => $USER->id,
+            'itemtype' => $itemtype,
+            'itemid' => $itemid,
+        ];
+
+        if ($DB->record_exists('local_chuspasocial_report', $conditions)) {
             throw new moodle_exception('reportsent', 'local_chuspasocial');
         }
 
         $record = (object) [
-            'itemtype' => $data->itemtype,
-            'itemid' => (int) $data->itemid,
-            'reporterid' => (int) $data->userid,
-            'reason' => $data->reason,
+            'itemtype' => $itemtype,
+            'itemid' => $itemid,
+            'reporterid' => $USER->id,
+            'reason' => $reason,
             'status' => 'open',
             'timecreated' => time(),
         ];
-        $record->id = $DB->insert_record('local_chuspasocial_report', $record);
+
+        $record->id = $DB->insert_record(
+            'local_chuspasocial_report',
+            $record
+        );
 
         self::notify_moderators($record);
 
-        $report = clone $record;
-        $report->userid = $record->reporterid;
-        return $report;
+        return (int) $record->id;
     }
 
     /**
