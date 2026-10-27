@@ -10,9 +10,8 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
 /**
- * Page to view a book listing and mark it as sold.
+ * Page to view a book listing, its external contact, and mark it as sold.
  *
  * @package    local_chuspasocial
  * @copyright  2026 SIS-INF
@@ -57,7 +56,12 @@ if (data_submitted() && optional_param('markassold', 0, PARAM_BOOL)) {
     require_sesskey();
 
     if ((int) $listing->userid !== (int) $USER->id) {
-        throw new moodle_exception('nopermissions', 'error', $pageurl, get_string('markassold', 'local_chuspasocial'));
+        throw new moodle_exception(
+            'nopermissions',
+            'error',
+            $pageurl,
+            get_string('markassold', 'local_chuspasocial')
+        );
     }
 
     if ($listing->status !== 'sold') {
@@ -73,6 +77,18 @@ if (data_submitted() && optional_param('markassold', 0, PARAM_BOOL)) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($listing->title));
+
+if (!empty($listing->externalcontact)) {
+    echo html_writer::tag(
+        'p',
+        s($listing->externalcontact),
+        ['class' => 'external-contact']
+    );
+    echo $OUTPUT->notification(
+        'Este contacto es externo a la institución',
+        \core\output\notification::NOTIFY_WARNING
+    );
+}
 
 if ($listing->status !== 'sold' && (int) $listing->userid === (int) $USER->id) {
     echo html_writer::start_tag('form', [
