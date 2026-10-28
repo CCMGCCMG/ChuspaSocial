@@ -59,6 +59,31 @@ class listing_service {
     }
 
     /**
+     * Save the photos of a listing from the draft area of the form.
+     *
+     * The files are stored in the 'listingphoto' file area, using the
+     * listing id as item id. It must be called when a listing is created
+     * and when it is updated.
+     *
+     * @param int $listingid Id of the listing that owns the photos.
+     * @param int $draftitemid Draft area id of the filemanager element.
+     */
+    public static function save_photos(int $listingid, int $draftitemid): void {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+
+        $context = \context_system::instance();
+        file_save_draft_area_files(
+            $draftitemid,
+            $context->id,
+            'local_chuspasocial',
+            'listingphoto',
+            $listingid,
+            ['subdirs' => 0, 'accepted_types' => ['image']]
+        );
+    }
+
+    /**
      * Get the available listings linked to the courses of the current user.
      *
      * A listing linked to several courses of the user is returned only once.
@@ -148,6 +173,10 @@ class listing_service {
         $listing->set('userid', (int) $USER->id);
         $listing->create();
 
+        if (!empty($data->photos)) {
+            self::save_photos((int) $listing->get('id'), (int) $data->photos);
+        }
+
         return $listing;
     }
     /**
@@ -214,6 +243,10 @@ class listing_service {
         }
 
         $listing->update();
+
+        if (!empty($data->photos)) {
+            self::save_photos($listingid, (int) $data->photos);
+        }
 
         return $listing;
     }

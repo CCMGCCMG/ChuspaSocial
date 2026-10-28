@@ -42,6 +42,8 @@
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="postid" TYPE="foreign" FIELDS="postid" REFTABLE="local_chuspasocial_post" REFFIELDS="id" />
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
             </KEYS>
         </TABLE>
         <TABLE NAME="local_chuspasocial_post" COMMENT="Publicaciones de ChuspaSocial">
@@ -58,7 +60,11 @@
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
             </KEYS>
+            <INDEXES>
+                <INDEX NAME="courseid_timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+            </INDEXES>
         </TABLE>
         <TABLE NAME="local_chuspasocial_lstcourse" COMMENT="Vinculos entre anuncio de libro y materia">
             <FIELDS>
